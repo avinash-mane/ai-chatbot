@@ -20,6 +20,7 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
+import { getAuthUrl } from '../app/utils/googleAuth';
 
 import { sanitizeUIMessages } from '@/lib/utils';
 
@@ -30,7 +31,7 @@ import { Textarea } from './ui/textarea';
 import { SuggestedActions } from './suggested-actions';
 import equal from 'fast-deep-equal';
 import GoogleDriveFiles from './GoogleDriveFiles';
-
+import GoogleDrivePicker from './GoogleDrivePicker';
 
 function PureMultimodalInput({
   chatId,
@@ -69,6 +70,25 @@ function PureMultimodalInput({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
+  const [loading, setLoading] = useState(false);
+
+  // Define the Google OAuth 2.0 client details
+  const GOOGLE_CLIENT_ID = '17564016300-bcnss413bhj2imovkckddd7e63ajlsqb.apps.googleusercontent.com';
+  const GOOGLE_REDIRECT_URI = 'http://localhost:3000/oauth2callback'; // Set the correct redirect URI
+
+  // Generate Google OAuth URL
+  const getAuthUrl = () => {
+    const scope = 'https://www.googleapis.com/auth/drive.file'; // Add necessary scopes
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(GOOGLE_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline`;
+    return authUrl;
+  };
+
+  const handleConnectGoogleDrive = async () => {
+    setLoading(true);
+    // Open Google OAuth URL in a new window
+    const authUrl = getAuthUrl();
+    window.open(authUrl, '_blank', 'width=500,height=600');
+  };
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -227,7 +247,10 @@ function PureMultimodalInput({
         </div>
       )}
 
-      <GoogleDriveFiles/>
+    <button onClick={handleConnectGoogleDrive} disabled={loading}>
+      {loading ? 'Connecting...' : 'Connect to Google Drive'}
+    </button>
+    <GoogleDrivePicker />
       <Textarea
         ref={textareaRef}
         placeholder="Send a message..."
